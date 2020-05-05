@@ -218,7 +218,8 @@ def inference_data_loader(FLAGS):
     )
 
 
-# Definition of the generator
+# Definition of the generat
+# 生成器结果结构
 def generator(gen_inputs, gen_output_channels, reuse=False, FLAGS=None):
     # Check the flag
     if FLAGS is None:
@@ -273,6 +274,7 @@ def generator(gen_inputs, gen_output_channels, reuse=False, FLAGS=None):
 
 
 # Definition of the discriminator
+# 判别器结构
 def discriminator(dis_inputs, FLAGS=None):
     if FLAGS is None:
         raise ValueError('No FLAGS is provided for generator')
@@ -344,6 +346,7 @@ def VGG19_slim(input, type, reuse, scope):
 
 
 # Define the whole network architecture
+# SRGAN网络结构
 def SRGAN(inputs, targets, FLAGS):
     # Define the container of the parameter
     Network = collections.namedtuple('Network', 'discrim_real_output, discrim_fake_output, discrim_loss, \
@@ -351,22 +354,26 @@ def SRGAN(inputs, targets, FLAGS):
         learning_rate')
 
     # Build the generator part
+    # 生成器 -> 生成的fake图片
     with tf.variable_scope('generator'):
         output_channel = targets.get_shape().as_list()[-1]
         gen_output = generator(inputs, output_channel, reuse=False, FLAGS=FLAGS)
         gen_output.set_shape([FLAGS.batch_size, FLAGS.crop_size*4, FLAGS.crop_size*4, 3])
 
     # Build the fake discriminator
+    # 使用Discriminator -> fake image的图片的logist
     with tf.name_scope('fake_discriminator'):
         with tf.variable_scope('discriminator', reuse=False):
             discrim_fake_output = discriminator(gen_output, FLAGS=FLAGS)
 
     # Build the real discriminator
+    # 使用Discriminator -> 真实图片的logist
     with tf.name_scope('real_discriminator'):
         with tf.variable_scope('discriminator', reuse=True):
             discrim_real_output = discriminator(targets, FLAGS=FLAGS)
 
     # Use the VGG54 feature
+    # 提取gen_output和target的特征，处理logist，VGG54, VGG22 or MSE
     if FLAGS.perceptual_mode == 'VGG54':
         with tf.name_scope('vgg19_1') as scope:
             extracted_feature_gen = VGG19_slim(gen_output, FLAGS.perceptual_mode, reuse=False, scope=scope)
@@ -390,6 +397,7 @@ def SRGAN(inputs, targets, FLAGS):
 
     # Calculating the generator loss
     with tf.variable_scope('generator_loss'):
+        # 内容的loss
         # Content loss
         with tf.variable_scope('content_loss'):
             # Compute the euclidean distance between the two features
@@ -399,9 +407,11 @@ def SRGAN(inputs, targets, FLAGS):
             else:
                 content_loss = FLAGS.vgg_scaling*tf.reduce_mean(tf.reduce_sum(tf.square(diff), axis=[3]))
 
+        # 生成器的loss
         with tf.variable_scope('adversarial_loss'):
             adversarial_loss = tf.reduce_mean(-tf.log(discrim_fake_output + FLAGS.EPS))
 
+        # 结合在一起
         gen_loss = content_loss + (FLAGS.ratio)*adversarial_loss
         print(adversarial_loss.get_shape())
         print(content_loss.get_shape())

@@ -74,7 +74,7 @@ if not os.path.exists(FLAGS.output_dir):
 if not os.path.exists(FLAGS.summary_dir):
     os.mkdir(FLAGS.summary_dir)
 
-# The testing mode
+# The testing mode(忽略)
 if FLAGS.mode == 'test':
     # Check the checkpoint
     if FLAGS.checkpoint is None:
@@ -151,7 +151,7 @@ if FLAGS.mode == 'test':
                 print('evaluate image', f['name'])
 
 
-# the inference mode (just perform super resolution on the input image)
+# the inference mode (just perform super resolution on the input image)(忽略)
 elif FLAGS.mode == 'inference':
     # Check the checkpoint
     if FLAGS.checkpoint is None:
@@ -223,6 +223,7 @@ elif FLAGS.mode == 'inference':
 elif FLAGS.mode == 'train':
     # Load data for training and testing
     # ToDo Add online downscaling
+    # 数据集倒入
     data = data_loader(FLAGS)
     print('Data count = %d' % (data.image_count))
 
